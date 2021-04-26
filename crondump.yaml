@@ -1,0 +1,27 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: mongodb-backup
+spec:
+  schedule: "* */24 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mongodb-backup
+            image: mongo:latest
+            args:
+            - "/bin/sh"
+            - "-c"
+            - "mongodump --uri="mongodb://10.98.112.247:27017 -d=myexampledb -o /tmp/backup "
+            - "tar cvzf /data/db/mongodb-backup.tar.gz /tmp/backup "
+            #- gsutil cp mongodb-backup.tar.gz gs://my-project/backups/mongodb-backup.tar.gz
+            volumeMounts:
+            - name: mongodb-persistent-storage
+              mountPath: /data/db
+          restartPolicy: OnFailure
+          volumes:
+          - name: mongodb-persistent-storage
+            persistentVolumeClaim:
+              claimName: mongodb-pv-claim
